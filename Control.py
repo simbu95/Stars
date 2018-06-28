@@ -26,27 +26,21 @@ _Ysize=80
 numpy.set_printoptions(threshold=numpy.inf)
 
 class SimpleAgent(base_agent.BaseAgent):
+    def __init__(self):
+      self.G_State=State()
     def step(self, obs):
         super(SimpleAgent, self).step(obs)
         time.sleep(.05)
         if _MOVE_SCREEN in obs.observation["available_actions"]:
-          s=State(obs)
-          return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, s.States(obs)])
+          self.G_State.Update(obs)
+          return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, self.G_State.States(obs)])
         else:
           return actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
 
 
 class State(object):  #Need to add in state of player unit
-  def __init__(self,obs):
+  def __init__(self):
     self.squares=numpy.zeros((4,_Xsize,_Ysize))
-    player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
-    neutral_y, neutral_x = (player_relative == _PLAYER_NEUTRAL).nonzero()
-    for p in zip(neutral_x, neutral_y):
-      self.squares[0,p[0],p[1]]=1
-    player_y, player_x = (player_relative == _PLAYER_FRIENDLY).nonzero()
-    player = [int(player_x.mean()), int(player_y.mean())]
-    self.squares[1,player[0],player[1]]=1
-  
   
   def States(self,obs):
     player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
@@ -62,6 +56,15 @@ class State(object):  #Need to add in state of player unit
     #Return Best State
     Best=[neutral_x[0], neutral_y[0]]
     return Best
+  def Update(self,obs):
+    self.squares=numpy.zeros((4,_Xsize,_Ysize))
+    player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
+    neutral_y, neutral_x = (player_relative == _PLAYER_NEUTRAL).nonzero()
+    for p in zip(neutral_x, neutral_y):
+      self.squares[0,p[0],p[1]]=1
+    player_y, player_x = (player_relative == _PLAYER_FRIENDLY).nonzero()
+    player = [int(player_x.mean()), int(player_y.mean())]
+    self.squares[1,player[0],player[1]]=1
 
 
 # Defining the state is hard  ... Mostly done
