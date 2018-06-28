@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy
+import time
 
 from pysc2.agents import base_agent
 from pysc2.lib import actions
@@ -27,34 +28,40 @@ numpy.set_printoptions(threshold=numpy.inf)
 class SimpleAgent(base_agent.BaseAgent):
     def step(self, obs):
         super(SimpleAgent, self).step(obs)
+        time.sleep(.05)
         if _MOVE_SCREEN in obs.observation["available_actions"]:
-          player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
-          neutral_y, neutral_x = (player_relative == _PLAYER_NEUTRAL).nonzero()
-          player_y, player_x = (player_relative == _PLAYER_FRIENDLY).nonzero()
-          if not neutral_y.any() or not player_y.any():
-            return actions.FunctionCall(_NO_OP, [])
-          player = [int(player_x.mean()), int(player_y.mean())]
-          if obs.observation["game_loop"][0]%10==0:
-            print(player)
-#            test=State(obs)
-#            print(test.squares)   #Appears to be working
-          closest, min_dist = None, None
-          for p in zip(neutral_x, neutral_y):
-            dist = numpy.linalg.norm(numpy.array(player) - numpy.array(p))
-            if not min_dist or dist < min_dist:
-              closest, min_dist = p, dist
-          return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, closest])
+          s=State(obs)
+          return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, s.States(obs)])
         else:
           return actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
 
 
 class State(object):  #Need to add in state of player unit
   def __init__(self,obs):
-    self.squares=numpy.zeros((_Xsize,_Ysize))
+    self.squares=numpy.zeros((4,_Xsize,_Ysize))
     player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
     neutral_y, neutral_x = (player_relative == _PLAYER_NEUTRAL).nonzero()
     for p in zip(neutral_x, neutral_y):
-      self.squares[p[0],p[1]]=1
+      self.squares[0,p[0],p[1]]=1
+    player_y, player_x = (player_relative == _PLAYER_FRIENDLY).nonzero()
+    player = [int(player_x.mean()), int(player_y.mean())]
+    self.squares[1,player[0],player[1]]=1
+  
+  
+  def States(self,obs):
+    player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
+    neutral_y, neutral_x = (player_relative == _PLAYER_NEUTRAL).nonzero()
+    for p in zip(neutral_x, neutral_y):
+      self.squares[2]=numpy.copy(self.squares[0])
+      self.squares[3]=numpy.zeros((_Xsize,_Ysize))
+      self.squares[2,p[0],p[1]]=0
+      self.squares[3,p[0],p[1]]=1
+      #Pick Best State
+      #Q-Eval (self.squares)
+      #if new best, save Best and evaluated value. 
+    #Return Best State
+    Best=[neutral_x[0], neutral_y[0]]
+    return Best
 
 
 # Defining the state is hard  ... Mostly done
