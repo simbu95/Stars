@@ -17,6 +17,7 @@ _NO_OP = actions.FUNCTIONS.no_op.id
 _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
 _ATTACK_SCREEN = actions.FUNCTIONS.Attack_screen.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
+_SELECT_POINT =actions.FUNCTIONS.select_point.id
 _NOT_QUEUED = [0]
 _SELECT_ALL = [0]
 
@@ -35,7 +36,11 @@ class SimpleAgent(base_agent.BaseAgent):
           self.G_State.Update(obs)
           return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, self.G_State.States(obs)])
         else:
-          return actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
+          player_relative = obs.observation["screen"][_PLAYER_RELATIVE]
+          player_y, player_x = (player_relative == _PLAYER_FRIENDLY).nonzero()
+          return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED,[player_x[0],player_y[0]]])
+          #return actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
+          #
 
 
 class State(object):  #Need to add in state of player unit
